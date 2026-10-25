@@ -1,0 +1,18 @@
+{
+  "name": "cravesage-translator-gpt-helper",
+  "version": "0.3.5",
+  "private": true,
+  "description": "Standalone Windows x64 native messaging helper for the CraveSaga translator",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/longtail7989/cravesage-translator-gpt-helper.git"
+  },
+  "scripts": {
+    "test": "node scripts/test.mjs",
+    "build": "node scripts/build-helper.mjs --offline"
+  }
+}

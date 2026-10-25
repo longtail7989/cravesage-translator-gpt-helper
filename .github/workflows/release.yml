@@ -1,0 +1,85 @@
+name: Helper Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing vVERSION tag matching package.json
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: helper-release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate package version and existing tag
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($version -notmatch '^\d+\.\d+\.\d+$' -or $env:RELEASE_TAG -cne "v$version") { throw 'Tag/version mismatch' }
+      - name: Isolated offline synthetic tests
+        run: node scripts/test.mjs
+      - name: Build standalone helper only
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: node scripts/build-helper.mjs --out dist --offline --tag $env:RELEASE_TAG
+      - name: Generate checksum
+        shell: pwsh
+        run: |
+          $zips = @(Get-ChildItem dist/*.zip)
+          if ($zips.Count -ne 1) { throw 'Expected one helper ZIP' }
+          $hash = (Get-FileHash $zips[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText((Join-Path $PWD "dist/SHA256SUMS.txt"), ($hash + "  " + $zips[0].Name + [char]10), [Text.UTF8Encoding]::new($false))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: helper-release
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: helper-release
+          path: dist
+      - name: Verify and publish helper artifacts without overwriting
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          (cd dist && sha256sum --check SHA256SUMS.txt)
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            mkdir -p existing
+            for file in dist/*.zip dist/SHA256SUMS.txt; do
+              name=$(basename "$file")
+              if gh release download "$RELEASE_TAG" --pattern "$name" --dir existing; then
+                cmp "$file" "existing/$name" || { echo 'Published asset differs; use a new version'; exit 1; }
+              else
+                gh release upload "$RELEASE_TAG" "$file"
+              fi
+            done
+          else
+            gh release create "$RELEASE_TAG" dist/*.zip dist/SHA256SUMS.txt --verify-tag --title "CraveSaga GPT helper $RELEASE_TAG" --notes "Standalone Windows x64 helper. Node 22.13+ required. Fixed extension-ID trust and noncommercial SDK restrictions apply. Read this repository README before installation."
+          fi

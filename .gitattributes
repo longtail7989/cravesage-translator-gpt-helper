@@ -1,0 +1,11 @@
+* text=auto
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+# Preserve reviewed Windows runtime/auth bytes exactly.
+*.ps1 -text
+*.tgz binary
+*.gz binary
+# Integrity-pinned provenance files must never undergo newline conversion.
+windows/vendor/** -text
