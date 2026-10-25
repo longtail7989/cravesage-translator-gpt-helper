@@ -1,73 +1,106 @@
-# cravesage-translator-gpt-helper (Windows x64)
+# CraveSaga GPT 도우미
 
-Standalone repository: https://github.com/longtail7989/cravesage-translator-gpt-helper . This helper is deliberately separate from the extension repository. It is a native-messaging runtime and release ZIP, not a browser extension or a hosted service. API-key translation does not require it.
+크레이브 사가 번역 확장에서 **ChatGPT 계정으로 로그인해 번역**할 때 사용하는 선택 구성요소입니다.
+공식 Sign in with ChatGPT SDK와 브라우저 확장을 Windows 네이티브 메시징으로 연결합니다.
+별도의 브라우저 확장이나 서버형 서비스가 아니며, **API 키 방식 번역에는 필요하지 않습니다.**
 
-## Upstream license and service eligibility
+- 저장소: [longtail7989/cravesage-translator-gpt-helper](https://github.com/longtail7989/cravesage-translator-gpt-helper)
+- 번역 확장 및 전체 설치 안내: [INSTALL.MD](https://github.com/longtail7989/cravesaga-translator/blob/main/INSTALL.MD)
+- **v0.3.5는 이 저장소의 첫 공개 GitHub 릴리스**입니다. 이전 내부 개발 내용을 포함한 초기 배포이며, 이전 공개 버전의 패치가 아닙니다.
 
-**The bundled OpenAI SDK uses SIGN-IN WITH CHATGPT DEVKIT NONCOMMERCIAL LICENSE v1, not a permissive MIT/Apache license. Its use and redistribution must comply with that noncommercial license and its full retained notices.** No additional first-party license grant is asserted (package.json is UNLICENSED); this does not override bundled third-party terms. A helper release grants no ChatGPT/API service entitlement, account access, model access, or permission to bypass service restrictions. Review the full upstream `LICENSE` and `THIRD_PARTY_NOTICES.md` before use or redistribution.
+## 설치 전 확인
 
-## Important distribution limitation
+- **Windows x64 전용**입니다. Windows ARM64·32비트, macOS, Linux는 지원하지 않습니다.
+- **Node.js 22.13 이상을 권장**합니다. 설치 스크립트의 실행 허용 하한은 22.12이며, 소스 빌드에는 22.13 이상이 필요합니다.
+- Node.js는 ZIP에 포함되지 않습니다. 설치 시 실제 로컬 `node.exe`의 절대 경로를 직접 지정합니다.
+- 배포 ZIP과 실행 구성요소는 **서명되지 않았습니다**. 자동 설치·자동 업데이트 기능은 없습니다.
+- ChatGPT 계정 로그인만으로 번역 권한이 생기지는 않습니다. 아래 이용 조건과 라이선스를 먼저 확인하세요.
 
-**This build trusts only extension ID `mfoolamgailfmmpddefkpnbfiecleefi`.** Both `host.cjs` and `windows/common.ps1` enforce that ID. The separately maintained extension may not have a stable public `key`; unpacked extension IDs can depend on the local directory/browser profile. A ZIP unpacked on another machine/path, or a Chrome Web Store publication, can therefore have a different ID and fail native messaging. Copying the helper or updating the ZIP does not fix that. The publisher must establish a stable extension identity and review/update both exact allowlists before claiming general public compatibility. Do not weaken the origin checks or use a wildcard. Existing users moving their unpacked directory must recheck the ID.
+### 중요: 현재 확장 ID 한 개만 허용
 
-This ZIP is an **unsigned, optional Windows x64 helper payload**, not an automatic installer/updater. It bundles the pinned SDK/dependencies and the Koffi x64 native binary, but **not Node.js**. Windows ARM64, ia32, macOS and Linux are not supported by this DPAPI adapter. Node >=22.12 is the installer's runtime floor; building requires Node >=22.13. Use the same exact Node build version to reproduce JavaScript type-erasure output.
+현재 허용하는 확장 ID는 **`mfoolamgailfmmpddefkpnbfiecleefi`**뿐입니다.
+설치 등록과 호스트 모두 이 출처를 검사하며, 다른 ID의 연결은 거부합니다.
 
-## Build from a fresh checkout
+압축해제 확장의 ID는 폴더 경로·브라우저 프로필 등에 따라 달라질 수 있습니다.
+따라서 **다른 PC에 압축을 풀기만 하면 작동한다고 보장하지 않습니다.**
+확장 폴더를 옮겼거나 스토어 배포본을 사용할 때도 ID를 다시 확인해야 합니다.
+ZIP 교체만으로 이 문제는 해결되지 않습니다. 와일드카드나 출처 검사 해제로 우회하지 마세요.
+일반 배포 호환성을 넓히려면 배포자가 안정된 확장 ID를 정하고 호스트·설치 등록의 정확한 허용 목록을 함께 검토해야 합니다.
+
+## 빠른 설치 순서
+
+1. 먼저 [전체 설치 안내](https://github.com/longtail7989/cravesaga-translator/blob/main/INSTALL.MD)에서 번역 확장과 확장 ID를 확인합니다.
+2. 이 저장소의 [Releases](https://github.com/longtail7989/cravesage-translator-gpt-helper/releases)에서
+   `cravesage-translator-gpt-helper-0.3.5-windows-x64.zip`과 `SHA256SUMS.txt`를 받습니다.
+3. ZIP의 SHA-256을 대조하고 안전한 로컬 폴더에 압축을 풉니다. 체크섬은 무결성 확인용이며 게시자 서명은 아닙니다.
+4. [Windows 설치 안내](windows/README.md)에 따라 `-WhatIf`로 미리 확인한 뒤 현재 Windows 사용자에게 설치합니다.
+5. 확장의 ChatGPT 연결 기능에서 공식 로그인 절차를 진행합니다. 보호 저장소 초기화가 실패하면 로그인을 진행하지 않습니다.
+
+확장은 도우미를 대신 설치하거나 업데이트하지 않습니다.
+소스 ZIP이나 저장소 체크아웃에는 펼쳐진 실행 의존성이 없으므로 **설치에는 빌드된 릴리스 ZIP**을 사용하세요.
+설치 경로와 Node 경로는 ASCII 문자와 안전한 문자만 사용해야 합니다.
+조직의 스크립트·브라우저 정책이 차단하면 중단하세요. 실행 정책이나 보안 검사를 완화하는 절차는 제공하지 않습니다.
+
+## 제공 기능
+
+- 길이·형식을 검사하는 네이티브 메시징과 제한된 번역 요청 큐, 요청 취소.
+- 공식 SDK 로그인·취소, 로컬 프로필 조회·전환·로그아웃, 공식 모델 목록 조회.
+- 계정 전환·로그아웃 시 기존 번역 취소 및 뒤늦게 도착한 결과 폐기.
+- Windows DPAPI CurrentUser 보호 저장소, 사용자 제한 ACL, 프로세스 간 잠금. 평문 저장 대체 경로 없음.
+- 번역 전용 고정 지침, 입력·응답 크기 제한, 번역 ID·플레이스홀더 검증.
+- 고정된 SDK·의존성 아카이브로 독립적인 오프라인 빌드, 라이선스·고지 보존.
+
+## 계정·요금제·모델 이용 조건
+
+- 이용 가능 상태는 SDK 연결이 `connected`이고 공유 권한 `chatgpt.tokens.use.direct`가 있는지로 판단합니다.
+- 도우미의 `planEnabled`는 이 조건을 나타내는 값이지, 특정 유료 요금제나 무제한 사용을 보장하는 값이 아닙니다.
+- 모델은 공식 `/v1/models` 응답 중 `visibility: "list"`인 항목만 표시합니다.
+  번역 요청 때도 선택한 모델 ID가 해당 목록에 있는지 확인합니다. 임의 모델 ID로 우회하지 않습니다.
+- 목록 표시와 로그인 성공은 실제 추론 권한을 보장하지 않습니다. 서비스의 계정 자격·공유 설정·사용량 한도·모델 접근 제한이 그대로 적용됩니다.
+- 공유 미허용, 재인증 필요, 사용량 한도 등의 오류를 무시하거나 별도 비공개 API로 우회하지 않습니다.
+
+## 보안과 개인정보
+
+인증 정보는 같은 Windows 사용자 범위의 DPAPI로 암호화해 저장합니다.
+저장소 보호가 실패하면 중단하며, 토큰을 확장에 넘기거나 로그에 기록하지 않습니다.
+허용된 확장 출처와 공식 서비스 출처만 사용하며, 임의 URL·프록시·파일·명령 실행 기능을 제공하지 않습니다.
+
+DPAPI는 같은 사용자 권한의 악성코드, 관리자/SYSTEM, 프로세스 메모리나 Windows 프로필 탈취까지 방어하지 않습니다.
+백업에도 암호화된 인증 정보가 포함될 수 있으므로 설치 폴더·state·백업·브라우저 프로필을 공개하지 마세요.
+자세한 저장소·설치·삭제 경계는 [Windows 안내](windows/README.md), 인증·통신 경계는 [SDK 안내](sdk/README.md)를 참조하세요.
+
+## 개발 및 검증
+
+Node.js 22.13 이상에서 저장소 루트에서 실행합니다.
 
 ```powershell
-node scripts/build-helper.mjs --out dist
-# If all nine pinned archives are present, require a completely offline build:
-node scripts/build-helper.mjs --out dist --offline
-# Optional release tag guard:
-node scripts/build-helper.mjs --out dist --tag v0.3.5
+node scripts/test.mjs
+node scripts/build-helper.mjs --out dist --offline --tag v0.3.5
 ```
 
-Output: `dist/cravesage-translator-gpt-helper-<package.version>-windows-x64.zip`. Existing ZIPs are never overwritten. Extraction places `host.cjs` and the `windows/` directory at the ZIP root. No npm installation or lifecycle script is run. The build uses Node built-ins, reconstructs everything in a disposable directory, checks upstream SHA-256 and package SHA-512 pins, checks the full Koffi file inventory, preserves package licenses and notices, and removes the disposable tree. Expanded files in the checkout are never build inputs. Missing archives are fetched from the pinned URLs unless `--offline` is used; a present archive with a bad hash is rejected, not silently replaced.
+`--offline`은 고정 아카이브 9개가 모두 있어야 성공합니다. npm 설치나 패키지 수명주기 스크립트는 실행하지 않습니다.
+빌드 결과는 `dist/cravesage-translator-gpt-helper-0.3.5-windows-x64.zip`이며 기존 ZIP은 덮어쓰지 않습니다.
+같은 추적 입력과 정확히 같은 Node 버전에서는 동일 바이트의 ZIP을 재현하도록 구성했습니다.
+빌드 입력·해시·배포 파일 범위는 [SDK 안내](sdk/README.md)에 정리했습니다.
 
-The ZIP has lexically ordered entries, fixed 1980 timestamps, ZIP STORE encoding and no host filesystem metadata. `BUILD-INFO.json` records the build Node version and input archive hashes; `SHA256SUMS.txt` lists every payload file except itself. Repeated builds with the same tracked inputs and exact Node version are byte-for-byte reproducible. Build checksums are integrity evidence, not publisher signatures. The build never reads an installed helper, browser profiles, state or credential storage; it never installs, authenticates, starts the host or calls a model.
+첫 공개 배포의 Node 22 CI와 릴리스 작업은 통과했습니다.
+검증 범위는 격리된 합성 프로토콜 19개·서비스 15개 테스트, 네이티브·브라우저 모의 테스트와 오프라인 빌드입니다.
+**실제 새 PC 설치, 실제 DPAPI·브라우저 연동, 로그인·계정 자격·모델 추론 성공을 검증했다는 뜻은 아닙니다.**
+CI는 설치·레지스트리 변경·인증·모델 호출을 수행하지 않습니다.
 
-## Exact source control inputs
+릴리스 버전은 루트 `package.json`을 기준으로 합니다.
+태그 푸시 또는 기존 태그를 지정한 수동 Release 실행은 해당 태그를 체크아웃해 버전 일치·테스트·빌드를 검사합니다.
+검증 후 GitHub CLI로 ZIP과 외부 `SHA256SUMS.txt`를 게시하며, 기존 파일이 다르면 덮어쓰지 않고 실패합니다.
 
-Keep only these helper inputs and this repository's package metadata/workflows/source-control rules (no extension sources):
+## 라이선스 및 변경 기록
 
-- `scripts/build-helper.mjs`
-- `{README.md,host.cjs,protocol.cjs,service.mjs}`
-- `{protocol.test.cjs,service.test.mjs}` for synthetic testing
-- `sdk/{README.md,PINNED-SOURCE.json}`
-- `sdk/upstream.tar.gz`
-- `sdk/downloads/{jose,openai,proper-lockfile,graceful-fs,retry,signal-exit}.tgz`
-- `windows/{common.ps1,install.ps1,uninstall.ps1,dpapi.cjs,README.md}`
-- `windows/{test-browser-mock.cjs,test-dpapi-bytes.cjs,test-native-mock.cjs}` for optional synthetic/platform tests
-- `windows/vendor/{PINNED-KOFFI.json,npm-metadata.json,LICENSE-KOFFI.txt,koffi.tgz,koffi-win32-x64.tgz}`
+**동봉된 OpenAI SDK는 SIGN-IN WITH CHATGPT DEVKIT NONCOMMERCIAL LICENSE v1.0을 사용합니다.**
+MIT/Apache 같은 범용 허용 라이선스가 아니며, SDK의 사용·재배포에는 그 비상업적 목적 제한과 원문 조건이 적용됩니다.
+무료 배포나 비영리 단체라는 이유만으로 조건을 충족한다고 단정할 수 없습니다.
+상업적 사용은 OpenAI와의 별도 서면 계약이 필요합니다. 원문 `LICENSE`와 `THIRD_PARTY_NOTICES.md`를 확인하세요.
 
-The nine archive inputs can technically be omitted from Git because the builder fetches and hash-verifies them. Keeping them tracked makes offline reconstruction independent of registry availability and GitHub archive regeneration. No expanded third-party directory needs committing.
+자체 패키지는 `UNLICENSED`이며 이 문서는 새 사용권을 부여하지 않습니다.
+각 의존성의 기존 라이선스는 별도로 유지됩니다. 배포물·SDK 라이선스는 ChatGPT/API 이용권이나 모델 접근권을 부여하지 않습니다.
+라이선스 원문과 고지 파일을 번역·대체·삭제하지 마세요.
 
-Exclude all `node_modules/`, the expanded `sdk/openai-sign-in-with-chatgpt-devkit-0a36fef/`, and expanded `windows/vendor/koffi/` from Git. Exclude generated `dist/`, `.helper-build-*/`, helper `state/`, profile files, tokens, local caches/logs, `.native-host.lock`, `.translator-service.lock`, `.crave-install.json`, native-host registration JSON, `launch-chatgpt.bat`, installation backups and registry snapshots. Never publish an installed helper directory or a browser profile. The builder copies only the explicit first-party file allowlist and archive-derived files, so those local trees are not release inputs.
-
-## Exact release payload
-
-- `README.md`, `host.cjs`, `protocol.cjs`, `service.mjs`
-- `windows/{common.ps1,install.ps1,uninstall.ps1,dpapi.cjs,README.md}`
-- `windows/vendor/{PINNED-KOFFI.json,npm-metadata.json,LICENSE-KOFFI.txt}`
-- Full archive-derived `windows/vendor/koffi/**`, with the x64 archive under `koffi/node_modules/@koromix/koffi-win32-x64/**`; all package licenses retained
-- `sdk/{README.md,PINNED-SOURCE.json}`
-- Under `sdk/openai-sign-in-with-chatgpt-devkit-0a36fef/`: `LICENSE`, `THIRD_PARTY_NOTICES.md`, `README.md`, `packages/local/{package.json,LICENSE,dist/**}` and exactly `node_modules/{jose,openai,proper-lockfile,graceful-fs,retry,signal-exit}/**`
-- Generated `BUILD-INFO.json` and `SHA256SUMS.txt`
-
-No archive downloads, source build recipe, tests, development dependencies, upstream examples or local state enter the helper ZIP. Full runtime package trees are preserved rather than stripping license-bearing files. The upstream SDK has its own license/notices; see `sdk/README.md` and its pinned source. Koffi's retained native package and bundled notices must remain included when redistributing.
-
-## Installation and verification boundaries
-
-Read `windows/README.md` before installing. It documents explicit `node.exe` selection, user-scoped HKCU registration, ACLs, ownership, backups, upgrade and uninstall. Installer paths must be ASCII and shell-safe. The extension cannot install or update the helper automatically. Existing installations require the installer's explicit `-Upgrade` path; do not copy over live state or locks. This build does not modify any installer or origin policy.
-
-`node scripts/test.mjs` runs 19 protocol + 15 service tests and mocked native/browser adapter tests in isolated canonical scratch space. It uses `realpathSync.native` for Windows short paths, strips inherited credentials and Node preloads, and passes only fixed safe NODE_OPTIONS path flags to nested children. Platform tests are separate; building a ZIP is not proof of installation, real DPAPI behavior, browser integration, account eligibility, sign-in success, model access or real inference. Never run login/model tests as part of a public release workflow.
-
-## Helper-only CI and releases
-
-CI uses the supported Node 22 line (the build records the exact resolved version) and runs the isolated synthetic tests plus an offline helper build. The version comes only from root `package.json`, not an extension manifest/core. A `v<package.version>` tag or manually dispatched Release workflow validates the exact tag, tests, builds the helper-only ZIP and generates external `SHA256SUMS.txt`. Manual publication requires the explicit publish input; otherwise the workflow uploads artifacts only. Release assets are exactly the ZIP and external checksum file. No extension build, npm install, login, model call, installation or registry mutation runs in CI.
-
-Source checkout intentionally lacks expanded runtime dependencies; install only from an extracted release payload after reviewing the Windows guide. Keep `windows/vendor/** -text` in `.gitattributes`, including pinned metadata and license bytes. Runtime/auth/installer sources are unchanged; only packaging, documentation, isolated test runner and automation were adapted.
-
-## Local standalone verification
-
-The offline helper build succeeded on Node 26.5.0: 3,806 ZIP entries, with all nine archive pins and complete native file inventory verified. All 15 service tests and both native/browser mock entrypoints passed. Locally, protocol tests 1-18 passed but the final nested byte-stream Node child timed out; this is a known local Node 26/sandbox fixture limitation, not a full 19-test pass. CI deliberately uses Node 22, where the parent project had verified all 19 protocol tests with canonical temporary paths. This new standalone repository still needs its own green GitHub CI run before release publication. No live DPAPI, install, auth or inference was attempted.
+첫 공개 릴리스의 전체 범위는 [CHANGELOG.md](CHANGELOG.md)를 참조하세요.
